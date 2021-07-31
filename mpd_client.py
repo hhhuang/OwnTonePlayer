@@ -1,9 +1,9 @@
 #import mpd as musicpd
-import musicpd
+#import musicpd
 import json
 import jsonpickle
 import os.path
-import heapq
+import requests
 
 from libs.collation import latin2ascii
 #from os import environ
@@ -12,17 +12,23 @@ from kb import database as knowledge_base
 
 #album_kb = knowledge_base.load_albums()
 
-def connect_server(host='localhost', port=6600):
-    client = musicpd.MPDClient()       # create client object
-    client.connect(host, port)                   # use MPD_HOST/MPD_PORT if set else
-                                   #   test ${XDG_RUNTIME_DIR}/mpd/socket for existence
-                                   #   fallback to localhost:6600
-                                   # connect support host/port argument as well
-    print(client.mpd_version)           # print the mpd version
-    #print(client.listall())
-#    print(client.lsinfo('file:/disk2/share/Music/Music/Sviatoslav Richter/Beethoven_ Rondos, Bagatelles_ Chopin_ E/08 Chopin_ Etude #3 In E, Op. 10_3,.m4a'))
-    #print(album)
-    return client
+
+class OwnToneAPI(object):
+    def __init__(self, host='localhost', port=3689):
+        self.host = host
+        self.port = port
+        
+    def get(self, command, parameters):
+        response = requests.get("http://" + self.host + ":" + self.port + "/api/" + command)
+        print(response.status_code)
+        if response.status_code != 200:
+            print("Error:")
+        return response.json()
+        
+def connect_server(host='localhost', port=3689):
+    conn = OwnTownAPI(host, port)
+    print(conn)
+    return conn
     
 class Album(object):
     @classmethod
