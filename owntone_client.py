@@ -26,16 +26,21 @@ class OwnToneAPI(object):
             command += '/' + action
         return "http://" + self.host + ":" + str(self.port) + "/api/" + command
         
-    def call(self, method, target, action='', **parameters):
+    def call(self, method, target, action='', data = None, **parameters):
+        if data is None:
+            data = {}
+        else:
+            data = json.dumps(data)
+            
         url = self.make_url(target, action)
         if method == 'get':
-            response = requests.get(url = url, params = parameters)
+            response = requests.get(url=url, data=data, params=parameters)
         elif method == 'put':
-            response = requests.put(url = url, params = parameters)
+            response = requests.put(url=url, data=data, params=parameters)
         elif method == 'post':
-            response = requests.post(url = url, params = parameters)
+            response = requests.post(url=url, data=data, params=parameters)
         elif method == 'delete':
-            response = requests.delete(url = url, params = parameters)
+            response = requests.delete(url=url, data=data, params=parameters)
 
         if response.status_code == 204:
             return True
@@ -46,6 +51,7 @@ class OwnToneAPI(object):
             print(response.status_code)
             print("Wrong request: ")
             print(url)
+            print(parameters)
             return False
             
     def download_artwork(self, artwork_url, target_filename):
@@ -124,9 +130,6 @@ class Library(object):
         if update:
             self.update()
         self.build()
-        """with open(self.album_path) as fin:
-            self.albums = jsonpickle.decode(json.load(fin))
-            print("Number of albums loaded: %d" % len(self.albums))"""
     
     def update(self):
         data = self.client.call('get', 'library', 'albums')
@@ -331,6 +334,20 @@ class Player(object):
         
     def setvol(self, vol: int):
         return self.client.call('put', 'player', 'volume', volume=vol)
+
+
+class Outputs(object):
+    def __init__(self, client):
+        self.client = client         
+    
+    def status(self):
+        return self.client.call('get', 'outputs')['outputs']
+        
+    def toggle(self, output_id):
+        return self.client.call('put', 'outputs', "%s/toggle" % str(output_id))
+        
+    def set_outputs(self, output_ids):
+        return self.client.call('put', 'outputs', "set", data={"outputs": output_ids})
     
 def show_list(albums):
     print("Number of albums: %d" % len(albums))

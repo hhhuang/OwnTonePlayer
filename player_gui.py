@@ -18,7 +18,7 @@ from kb.kb_prediction import get_recommendation_list
 
 owntone_client = None
 
-def get_artwork(album):
+def get_artwork(album, update=False):
     if not album.artwork_url:
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'artworks', "blank.jpg")
     #   Using the last two folders as the key because it is migratable.
@@ -31,7 +31,7 @@ def get_artwork(album):
     if os.path.isfile(artwork_path):
         if pathlib.Path(artwork_path).stat().st_size > 0:
             return artwork_path
-        else:
+        elif not update:
             return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'artworks', "blank.jpg")
             
     if owntone_client.download_artwork(album.artwork_url, artwork_path):
@@ -167,7 +167,7 @@ class AlbumPopup(QDialog):
 
     @pyqtSlot()
     def item_mouse_over(self):
-        """        ▶"""
+        """        """
         pass
         
     @pyqtSlot()
@@ -232,11 +232,31 @@ class ConfigPopup(QDialog):
         self.layout.addWidget(self.port_input, 1, 1)
         self.layout.addWidget(self.volume_label, 2, 0)
         self.layout.addWidget(self.volume_input, 2, 1)
-        self.layout.addWidget(self.cancel_button, 3, 0)
-        self.layout.addWidget(self.ok_button, 3, 1)
+        self.layout.addWidget(QLabel("Outputs", self), 3, 0)
+
+        row = 4
+        self.output_checkboxes = {}
+        for output in main.outputs.status():
+            o = QCheckBox(output['name'], self)
+            o.setChecked(output['selected'])
+            o.stateChanged.connect(self.toggle_output)
+            self.output_checkboxes[output['id']] = o
+            self.layout.addWidget(o, row, 0, 1, 2)
+            row += 1
+        self.layout.addWidget(self.cancel_button, row, 0)
+        self.layout.addWidget(self.ok_button, row, 1)
         
         self.setLayout(self.layout) 
         self.show()
+    
+    @pyqtSlot()
+    def toggle_output(self):
+        selected = []
+        for output_id, o in self.output_checkboxes.items():
+            if o.isChecked():
+                selected.append(output_id)
+        print(selected)
+        self.main.outputs.set_outputs(selected)
         
     @pyqtSlot()
     def cancel_on_click(self):
@@ -308,6 +328,7 @@ class App(QWidget):
         self.playqueue = PlayQueue(self.client)
         self.player = Player(self.client)
         self.player.setvol(self.config['volume'])
+        self.outputs = Outputs(self.client)
         self.slider_moving = False
         
     def initData(self, results=None):
@@ -356,6 +377,8 @@ class App(QWidget):
         self.grid_view_action.toggled.connect(self.change_album_view)
         self.view_menu = self.menuBar.addMenu('View')
         self.view_menu.addAction(self.grid_view_action)
+        
+        
         
     def initUI(self):
         self.setWindowTitle(self.title)
@@ -486,6 +509,8 @@ class App(QWidget):
         status = self.player.status()
         """{'state': 'play', 'repeat': 'off', 'consume': False, 'shuffle': False, 'volume': 100, 'item_id': 3358, 'item_length_ms': 213066, 'item_progress_ms': 370, 'artwork_url': './artwork/nowplaying'}"""
 
+        output_str = ",".join([o['name'] for o in self.outputs.status() if o['selected']])
+        
         if track and status and 'album' in track and 'item_length_ms' in status:
             self.infobox.setText("%s: %d-%d %s %s" % (track['album'], int(track['disc_number']), int(track['track_number']), track['title'], track['artist']))
             self.playing_time = status['item_progress_ms'] // 1000
@@ -504,7 +529,9 @@ class App(QWidget):
             self.volume_slider.setValue(int(status['volume']))
             self.volume_slider.setMinimum(0)            
             self.volume_slider.setMaximum(100) 
-            self.volume_slider.setToolTip("Volume: %d" % status['volume'])
+            if output_str:
+                output_str = " (%s)" % output_str
+            self.volume_slider.setToolTip("Volume: %d%s" % (status['volume'], output_str))
             
             album = self.music_lib.get_album_by_tmp_id(track['album_id'])
             self.updateCurrentTrackInfo(album, track)
@@ -574,7 +601,8 @@ class App(QWidget):
     @pyqtSlot()
     def popup_configuration(self):
         exPopup = ConfigPopup(self)
-        exPopup.setGeometry(100, 200, 100, 100)
+        #exPopup.setGeometry(100, 200, 100, 200)
+        exPopup.setMinimumSize(100, 200)
         exPopup.show()
 
     @pyqtSlot()
@@ -597,7 +625,7 @@ class App(QWidget):
             i = 0
             albums = self.music_lib.list_latest_albums(10000000)
             for album in albums:
-                get_artwork(album)
+                get_artwork(album, update=True)
                 i += 1
                 if i % 100 == 0:
                     print("%d / %d have been processed." % (i, len(albums)))
