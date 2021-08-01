@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import datetime
 from hashlib import sha1
 import json
@@ -11,7 +13,6 @@ from PyQt5.QtGui import QIcon, QImage, QPixmap
 from PyQt5.QtCore import *
  
 from owntone_client import * 
-import mutagen
 
 from libs.background_task import run_async, run_async_mutex, run_loop, remove_threads
 from kb.kb_prediction import get_recommendation_list
@@ -185,13 +186,12 @@ class AlbumPopup(QDialog):
         print("Play on click!")
         print(self.album.title)         
         self.main.player.pause()
-        self.main.playqueue.clear()        
-        if not self.table.selectedItems():
+        self.main.playqueue.clear()       
+        if not self.table.selectedItems():  # Add the entire album.
             self.main.playqueue.add_album(self.album, True)
-            return
-        tracks = [item.data(Qt.UserRole) for item in self.table.selectedItems() if item.column() == 2]
-        print(tracks)
-        self.main.playqueue.set_tracks(tracks, playback=True)
+        else:                               # Add the selected tracks.
+            tracks = [item.data(Qt.UserRole) for item in self.table.selectedItems() if item.column() == 2]
+            self.main.playqueue.set_tracks(tracks, playback=True)
         self.main.updatePlaylist()
         self.close()
         
@@ -286,6 +286,7 @@ class TableItem(QTableWidgetItem):
         
 class App(QWidget): 
     def __init__(self):
+        self.albums = []
         super().__init__()
         self.title = 'OwnTone Player for Audiophiles'
         self.left = 256
@@ -293,7 +294,7 @@ class App(QWidget):
         self.width = 1024
         self.height = 768
         self.log_file = "log.txt"
-
+        
         self.initUI()
         self.load_config()
         try:
@@ -358,13 +359,13 @@ class App(QWidget):
             self.play_button.setText('Play')
                   
     def createMenuBar(self):
-        self.config_action = QAction("Configuration", self)
+        self.config_action = QAction("Configure", self)
         self.config_action.triggered.connect(self.popup_configuration)
 
-        self.rebuild_action = QAction("Rebuild library", self)
+        self.rebuild_action = QAction("Rebuild Library", self)
         self.rebuild_action.triggered.connect(self.rebuild_library)
         
-        self.artwork_action = QAction("Update all artworks", self)
+        self.artwork_action = QAction("Update Artworks", self)
         self.artwork_action.triggered.connect(self.build_all_artworks)
                 
         self.menuBar = QMenuBar()
@@ -373,13 +374,31 @@ class App(QWidget):
         self.option_menu.addAction(self.rebuild_action)
         self.option_menu.addAction(self.artwork_action)
         
-        self.grid_view_action = QAction("Grid view", checkable=True, checked=False)
-        self.grid_view_action.toggled.connect(self.change_album_view)
+        self.list_view_action = QAction("List", checkable=True, checked=False)
+        self.small_grid_view_action = QAction("Small Grid", checkable=True, checked=False)
+        self.medium_grid_view_action = QAction("Medium View", checkable=True, checked=True)
+        self.large_grid_view_action = QAction("Large Grid", checkable=True, checked=False)
+                
+        self.list_view_action.toggled.connect(self.change_album_view)
+        self.small_grid_view_action.toggled.connect(self.change_album_view)
+        self.medium_grid_view_action.toggled.connect(self.change_album_view)
+        self.large_grid_view_action.toggled.connect(self.change_album_view)
+       
+        self.view_group = QActionGroup(self)
+        self.view_group.setExclusive(True)
+        self.view_group.addAction(self.list_view_action)
+        self.view_group.addAction(self.small_grid_view_action)
+        self.view_group.addAction(self.medium_grid_view_action)
+        self.view_group.addAction(self.large_grid_view_action)
+       
         self.view_menu = self.menuBar.addMenu('View')
-        self.view_menu.addAction(self.grid_view_action)
+        self.view_menu.addAction(self.list_view_action)
+        self.view_menu.addSeparator()
+        self.view_menu.addAction(self.small_grid_view_action)
+        self.view_menu.addAction(self.medium_grid_view_action)
+        self.view_menu.addAction(self.large_grid_view_action)
         
-        
-        
+                
     def initUI(self):
         self.setWindowTitle(self.title)
         self.setWindowIcon(QIcon(os.path.join(os.path.dirname(__file__), 'misc', 'icon.png')))
@@ -395,6 +414,16 @@ class App(QWidget):
         self.current_track_info.setLayout(QGridLayout())
         self.renderLayout()                
         
+    def event(self, event):
+        if event.type() in [QEvent.NonClientAreaMouseButtonRelease, QEvent.WindowStateChange]:
+            print("Event deteted.")
+            if not self.list_view_action.isChecked():
+                ideal_num_columns, _, _ = self.computeGridSize()
+                current_num_columns = self.albumGrid.columnCount()
+                if ideal_num_columns != current_num_columns:
+                    self.updateAlbumTable(None)
+        return super().event(event)
+        
     def renderLayout(self):
         self.layout = QVBoxLayout()
         self.layout.setMenuBar(self.menuBar)
@@ -406,7 +435,7 @@ class App(QWidget):
         #self.album_tab.layout().addWidget(self.statusBar)
         
         #self.playlist_tab = QFrame()
-        #self.playlist_tab.setLayout(QVBoxLayout())
+        #self.pla2ylist_tab.setLayout(QVBoxLayout())
         #self.playlist_tab.layout().addWidget(self.playlist)
         
         self.stacked_tab = QStackedWidget()
@@ -635,7 +664,7 @@ class App(QWidget):
         
     @pyqtSlot()
     def change_album_view(self):
-        self.updateAlbumTable(self.music_lib.list_latest_albums(10000000))  
+        self.updateAlbumTable()
         
     @pyqtSlot()
     def search_button_reset(self):
@@ -658,13 +687,18 @@ class App(QWidget):
         print("Number of albums found: %d" % len(albums))
         self.updateAlbumTable(albums)
 
-    def updateAlbumTable(self, albums):
-        if self.grid_view_action.isChecked():
-            self.fillAlbumGrid(albums)
-            self.stacked_tab.setCurrentIndex(2)
+    def updateAlbumTable(self, albums=None):
+        if albums is None:
+            albums = self.albums
         else:
+            self.albums = albums
+        if self.list_view_action.isChecked():
             self.fillAlbumTable(albums)
             self.stacked_tab.setCurrentIndex(1)        
+        else:
+            self.fillAlbumGrid(albums)
+            self.stacked_tab.setCurrentIndex(2)            
+        self.updateStatusBar(albums)
         self.layout.update()
         self.update()
         
@@ -679,11 +713,9 @@ class App(QWidget):
             self.albumTable.setItem(i, 1, TableItem(albums[i].artist))
             self.albumTable.setItem(i, 2, TableItem(albums[i].last_modified[:10]))
         self.albumTable.move(0,0)
-        
         self.sorted_order = Qt.DescendingOrder
         self.sorted_column = 2
         self.albumTable.sortItems(self.sorted_column, self.sorted_order)
-        self.updateStatusBar(albums)
         
     def updatePlaylist(self):
         print("Updating playlist")
@@ -692,7 +724,6 @@ class App(QWidget):
         self.update_status()
 #        self.albumTable.doubleClicked.connect(self.item_on_double_click)
 #        self.playlist.clicked.connect(self.item_on_click)           
-       
         
     def updateRecommendation(self, collection):
         table = self.recommendation
@@ -739,46 +770,69 @@ class App(QWidget):
         self.albumTable.doubleClicked.connect(self.item_on_double_click)
         self.albumTable.clicked.connect(self.item_on_click)
         
+    def getThumbnailSize(self):        
+        if self.large_grid_view_action.isChecked():
+            return 240
+        elif self.small_grid_view_action.isChecked():
+            return 180
+        else: 
+            return 150
+
     def createAlbumGrid(self):
        # Create table
-        num_columns = 5
         self.albumGrid = QTableWidget()
         self.albumGrid.setShowGrid(False)
         self.albumGrid.horizontalHeader().hide()
         self.albumGrid.verticalHeader().hide()
-        #table.setRowCount((len(items) + 2) // 3)
-        self.albumGrid.setColumnCount(num_columns)
-        for i in range(num_columns):
-            self.albumGrid.setColumnWidth(i, 195)
         # table selection change
         self.albumGrid.doubleClicked.connect(self.grid_item_on_double_click)
         self.albumGrid.clicked.connect(self.grid_item_on_click)
-
-    def fillAlbumGrid(self, albums):
+        self.artwork_pixmap_cache = {}
+        
+    def getGridItem(self, album):
+        if album.album_id not in self.artwork_pixmap_cache:
+            self.artwork_pixmap_cache[album.album_id] = QPixmap(get_artwork(album))
+        img = self.artwork_pixmap_cache[album.album_id]
+        
+        thumbnail = TableItem("")
+        thumbnail.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+        thumbnail.setData(Qt.DecorationRole, img.scaled(self.getThumbnailSize(), self.getThumbnailSize(), Qt.KeepAspectRatio))
+        thumbnail.setData(Qt.UserRole, album.album_id)
+        thumbnail.setToolTip("%s\n%s" % (album.title, album.artist))
+        
+        info = TableItem("%s\n%s" % (album.title, album.artist))
+        info.setTextAlignment(Qt.AlignCenter | Qt.AlignTop);
+        info.setData(Qt.UserRole, album.album_id)
+        
+        return thumbnail, info
+        
+    def computeGridSize(self):
+        grid_width = int(self.getThumbnailSize() * 1.1)
+        grid_height = int(self.getThumbnailSize() * 1.05)
+        tab_width = self.stacked_tab.size().width()
+        num_columns = tab_width // grid_width
+        return num_columns, grid_width, grid_height
+    
+    def fillAlbumGrid(self, albums):       
+        num_columns, grid_width, grid_height = self.computeGridSize()       
+               
         table = self.albumGrid
-        num_columns = table.columnCount()
+        table.clearContents()        
+        table.setColumnCount(num_columns)
         table.setRowCount(2 * ((len(albums) + num_columns - 1) // num_columns))
-
+        
+        for i in range(num_columns):
+            self.albumGrid.setColumnWidth(i, grid_width)
+        
         for idx, album in enumerate(albums):
-            img = QPixmap(get_artwork(album))
-            cover_item = TableItem("")
-            cover_item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
-            cover_item.setData(Qt.DecorationRole, img.scaled(180, 180, Qt.KeepAspectRatio))
-            cover_item.setData(Qt.UserRole, album.album_id)
-            cover_item.setToolTip("%s\n%s" % (album.title, album.artist))
-            
-            info = TableItem("%s\n%s" % (album.title, album.artist))
-            info.setTextAlignment(Qt.AlignCenter | Qt.AlignTop);
-            info.setData(Qt.UserRole, album.album_id)
-            
+            thumbnail, info = self.getGridItem(album)
             row = (idx // num_columns) * 2
             col = idx % num_columns
-            table.setItem(row, col, cover_item)
+            table.setItem(row, col, thumbnail)
             table.setItem(row + 1, col, info) 
-            
             if col == 0:
-                table.setRowHeight(row, 195)
-                table.setRowHeight(row + 1, 50)                
+                table.setRowHeight(row, grid_height)
+                table.setRowHeight(row + 1, 50)
         table.move(0, 0)
                       
     def updateCurrentTrackInfo(self, album, track):
@@ -818,7 +872,6 @@ class App(QWidget):
         #self.layout.update()
         #self.update()    
            
-
     @pyqtSlot()
     def grid_item_on_click(self):
         self.grid_item_on_double_click()

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 import jsonpickle
 import os.path
@@ -7,7 +9,6 @@ import shutil
 
 from libs.collation import latin2ascii
 #from kb import database as knowledge_base
-
 #album_kb = knowledge_base.load_albums()
 
 
