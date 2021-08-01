@@ -22,6 +22,7 @@ We design this player with this consideration in mind, providing an elegant and 
 
 ## Environment Requirement
 * Python 3
+* QT 5
 * Operating system: Windows/Mac/Linux and so on. The code has been verified on Windows 10 and Mac OS Mojave.
 * A collection of audio files that is manipulated by an OwnTone server. [More information of the setup of the OwnTone server](https://github.com/owntone/owntone-server).
 * An ideal setting is comprised of a standalone music server running the OwnTone service, a standalone music renderer like a Hi-Fi DAC/Stream Player that supports Apple AirPlay or [Shairport Sync](https://github.com/mikebrady/shairport-sync), and this player installed on another powerful desktop/laptop in the same LAN. 
@@ -55,8 +56,9 @@ For a collection of 3,000 CDs on a remote SSD, the procedure will perform in 10 
 <img src="https://github.com/hhhuang/OwnTonePlayer/blob/master/misc/player_gui.png?raw=true" width=640 />
 
 ### Browse the albums in the grid view
-Three sizes of the grid views are available. 
+Four sizes of the grid views are available. 
 The player spends a number of seconds when it launchs the grid view or list view. 
+
 <img src="https://github.com/hhhuang/OwnTonePlayer/blob/master/misc/player_gui_grid_view.png?raw=true" width=640 />
 
 ### Config the OwnTone server and select output devices
