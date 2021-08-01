@@ -1,6 +1,6 @@
-# Owntone Player for Audiophiles
+# OwnTone Player for Audiophiles
 
-This is an audiophile music player for [the OwnTone server (previously forked-daapd)](https://github.com/owntone/owntone-server), migrated from my previous [project](https://github.com/hhhuang/mpd_player) for the [MPD](https://www.musicpd.org) protocol. 
+This is an audiophile music player for the [OwnTone](https://github.com/owntone/owntone-server) music server (previously forked-daapd), migrated from my previous [project](https://github.com/hhhuang/mpd_player) for the [MPD](https://www.musicpd.org) protocol. 
 This player is designed for the purpose of audio playback, aiming to deal with two core issues in network audio playback.
 
 Firstly, the traditional clients are lightweight, leeaving heavy load for the music servers to support functions such as browsing, search, and streaming artworks.
@@ -21,7 +21,7 @@ We design this player with this consideration in mind, providing an elegant and 
 * Many audio grade music servers and renderers are built on low-power devices such as NAS and Raspberry Pi. To reduce the loads of these devices, all the loading are taken by the controller side (i.e. this player). This design philosophy results a slim, mimimal, somewhat slow player, but both server/renderer sides benefit from stability, lower jitter, and better sound quailty. 
 
 ## Environment Requirement
-* Python3
+* Python 3
 * Operating system: Windows/Mac/Linux and so on. The code has been verified on Windows 10 and Mac OS Mojave.
 * A collection of audio files that is manipulated by an OwnTone server. [More information of the setup of the OwnTone server](https://github.com/owntone/owntone-server).
 * An ideal setting is comprised of a standalone music server running the OwnTone service, a standalone music renderer like a Hi-Fi DAC/Stream Player that supports Apple AirPlay or [Shairport Sync](https://github.com/mikebrady/shairport-sync), and this player installed on another powerful desktop/laptop in the same LAN. 
