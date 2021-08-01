@@ -209,9 +209,9 @@ class PlayQueue(object):
             raise ValueError("The album should be either an uri or an Album instance.")
             
         if playback:
-            return self.client.call('post', 'queue', 'items/add', uris=uris, playback="start")
+            return self.client.call('post', 'queue', 'items/add', clear=True, uris=uris, playback="start")
         else:
-            return self.client.call('post', 'queue', 'items/add', uris=uris)       
+            return self.client.call('post', 'queue', 'items/add', clear=True, uris=uris)       
         
     def add_albums(self, albums, playback=False):
         if (not isinstance(albums, list)) or len(albums) < 1:
@@ -224,9 +224,9 @@ class PlayQueue(object):
             raise ValueError("The album should be either an uri or an Album instance.")
 
         if playback:
-            return self.client.call('post', 'queue', 'items/add', uris=uris, playback="start")
+            return self.client.call('post', 'queue', 'items/add', clear=True, uris=uris, playback="start")
         else:
-            return self.client.call('post', 'queue', 'items/add', uris=uris)
+            return self.client.call('post', 'queue', 'items/add', clear=True, uris=uris)
          
     def set_tracks(self, tracks, position=0, playback=False):
         if playback:

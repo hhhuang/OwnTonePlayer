@@ -375,14 +375,17 @@ class App(QWidget):
         self.option_menu.addAction(self.artwork_action)
         
         self.list_view_action = QAction("List", checkable=True, checked=False)
+        
         self.small_grid_view_action = QAction("Small Grid", checkable=True, checked=False)
-        self.medium_grid_view_action = QAction("Medium View", checkable=True, checked=True)
-        self.large_grid_view_action = QAction("Large Grid", checkable=True, checked=False)
-                
+        self.medium_grid_view_action = QAction("Medium View", checkable=True, checked=False)
+        self.large_grid_view_action = QAction("Large Grid", checkable=True, checked=True)
+        self.extra_large_grid_view_action = QAction("Extra Large Grid", checkable=True, checked=False)
+                        
         self.list_view_action.toggled.connect(self.change_album_view)
         self.small_grid_view_action.toggled.connect(self.change_album_view)
         self.medium_grid_view_action.toggled.connect(self.change_album_view)
         self.large_grid_view_action.toggled.connect(self.change_album_view)
+        self.extra_large_grid_view_action.toggled.connect(self.change_album_view)
        
         self.view_group = QActionGroup(self)
         self.view_group.setExclusive(True)
@@ -390,6 +393,7 @@ class App(QWidget):
         self.view_group.addAction(self.small_grid_view_action)
         self.view_group.addAction(self.medium_grid_view_action)
         self.view_group.addAction(self.large_grid_view_action)
+        self.view_group.addAction(self.extra_large_grid_view_action)
        
         self.view_menu = self.menuBar.addMenu('View')
         self.view_menu.addAction(self.list_view_action)
@@ -397,7 +401,7 @@ class App(QWidget):
         self.view_menu.addAction(self.small_grid_view_action)
         self.view_menu.addAction(self.medium_grid_view_action)
         self.view_menu.addAction(self.large_grid_view_action)
-        
+        self.view_menu.addAction(self.extra_large_grid_view_action)
                 
     def initUI(self):
         self.setWindowTitle(self.title)
@@ -771,8 +775,10 @@ class App(QWidget):
         self.albumTable.clicked.connect(self.item_on_click)
         
     def getThumbnailSize(self):        
-        if self.large_grid_view_action.isChecked():
-            return 240
+        if self.extra_large_grid_view_action.isChecked():
+            return 256
+        elif self.large_grid_view_action.isChecked():
+            return 216
         elif self.small_grid_view_action.isChecked():
             return 150
         else: 
@@ -887,7 +893,12 @@ class App(QWidget):
            
     @pyqtSlot()
     def grid_item_on_click(self):
-        self.grid_item_on_double_click()
+        row = self.albumGrid.currentRow()
+        col = self.albumGrid.currentColumn()
+        album_id = self.albumGrid.item(row, col).data(Qt.UserRole)
+        if album_id == "Spacer":
+            return
+        self.popup_album(album_id)
     
     @pyqtSlot()
     def grid_item_on_double_click(self):
@@ -896,7 +907,9 @@ class App(QWidget):
         album_id = self.albumGrid.item(row, col).data(Qt.UserRole)
         if album_id == "Spacer":
             return
-        self.popup_album(album_id)
+        print("Play on click!")
+        self.main.playqueue.add_album(album_id, playback=True)
+        self.main.updatePlaylist()
 
     @pyqtSlot()
     def item_on_click(self):
