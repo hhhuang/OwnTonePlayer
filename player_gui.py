@@ -419,7 +419,7 @@ class App(QWidget):
             print("Event deteted.")
             if not self.list_view_action.isChecked():
                 ideal_num_columns, _, _ = self.computeGridSize()
-                current_num_columns = self.albumGrid.columnCount()
+                current_num_columns = self.albumGrid.columnCount() - 1  #   There is addionional column as the left maring.
                 if ideal_num_columns != current_num_columns:
                     self.updateAlbumTable(None)
         return super().event(event)
@@ -774,16 +774,18 @@ class App(QWidget):
         if self.large_grid_view_action.isChecked():
             return 240
         elif self.small_grid_view_action.isChecked():
-            return 180
-        else: 
             return 150
+        else: 
+            return 180
 
     def createAlbumGrid(self):
        # Create table
         self.albumGrid = QTableWidget()
+        self.albumGrid.setStyleSheet("QTableWidget::item:selected{ background-color: transparent; color: black} QTableWidget {selection-background-color: transparent; selection-color: black}")
         self.albumGrid.setShowGrid(False)
         self.albumGrid.horizontalHeader().hide()
         self.albumGrid.verticalHeader().hide()
+        self.albumGrid.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         # table selection change
         self.albumGrid.doubleClicked.connect(self.grid_item_on_double_click)
         self.albumGrid.clicked.connect(self.grid_item_on_click)
@@ -806,31 +808,42 @@ class App(QWidget):
         
         return thumbnail, info
         
-    def computeGridSize(self):
-        grid_width = int(self.getThumbnailSize() * 1.1)
+    def computeGridSize(self) -> (int, int, int):
+        grid_width = int(self.getThumbnailSize() * 1.05)
         grid_height = int(self.getThumbnailSize() * 1.05)
-        tab_width = self.stacked_tab.size().width()
-        num_columns = tab_width // grid_width
+        tab_width = self.stacked_tab.size().width() - 20 # 20 pixels for the Y scrolling bar.
+        num_columns = int(tab_width // (grid_width))
         return num_columns, grid_width, grid_height
     
     def fillAlbumGrid(self, albums):       
-        num_columns, grid_width, grid_height = self.computeGridSize()       
-               
+        num_columns, grid_width, grid_height = self.computeGridSize()
+        spacing = max(0, int(((self.stacked_tab.size().width() - 20) - (num_columns * grid_width)) // 2 - 5))
+        
         table = self.albumGrid
         table.clearContents()        
-        table.setColumnCount(num_columns)
-        table.setRowCount(2 * ((len(albums) + num_columns - 1) // num_columns))
+        table.setColumnCount(num_columns + 1)
+        table.setRowCount(2 * int((len(albums) + num_columns - 1) // num_columns))
         
-        for i in range(num_columns):
-            self.albumGrid.setColumnWidth(i, grid_width)
+        #self.albumGrid.setColumnWidth(0, left_margin)
+        for i in range(0, table.columnCount()):
+            if i == 0:
+                table.setColumnWidth(i, spacing)
+            else:
+                table.setColumnWidth(i, grid_width)
         
         for idx, album in enumerate(albums):
             thumbnail, info = self.getGridItem(album)
-            row = (idx // num_columns) * 2
-            col = idx % num_columns
-            table.setItem(row, col, thumbnail)
-            table.setItem(row + 1, col, info) 
+            row = int((idx // num_columns) * 2)
+            col = int(idx % num_columns)
+            table.setItem(row, col + 1, thumbnail)
+            table.setItem(row + 1, col + 1, info) 
             if col == 0:
+                spacer = TableItem("")
+                spacer.setData(Qt.UserRole, "Spacer")
+                table.setItem(row, 0, spacer)
+                spacer = TableItem("")
+                spacer.setData(Qt.UserRole, "Spacer")
+                table.setItem(row + 1, 0, spacer)
                 table.setRowHeight(row, grid_height)
                 table.setRowHeight(row + 1, 50)
         table.move(0, 0)
@@ -881,6 +894,8 @@ class App(QWidget):
         row = self.albumGrid.currentRow()
         col = self.albumGrid.currentColumn()
         album_id = self.albumGrid.item(row, col).data(Qt.UserRole)
+        if album_id == "Spacer":
+            return
         self.popup_album(album_id)
 
     @pyqtSlot()
