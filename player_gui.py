@@ -377,7 +377,7 @@ class App(QWidget):
         self.list_view_action = QAction("List", checkable=True, checked=False)
         
         self.small_grid_view_action = QAction("Small Grid", checkable=True, checked=False)
-        self.medium_grid_view_action = QAction("Medium View", checkable=True, checked=False)
+        self.medium_grid_view_action = QAction("Medium Grid", checkable=True, checked=False)
         self.large_grid_view_action = QAction("Large Grid", checkable=True, checked=True)
         self.extra_large_grid_view_action = QAction("Extra Large Grid", checkable=True, checked=False)
                         
