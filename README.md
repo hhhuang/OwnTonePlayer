@@ -55,9 +55,33 @@ For a collection of 3,000 CDs on a remote SSD, the procedure will perform in 10 
 <img src="https://github.com/hhhuang/OwnTonePlayer/blob/master/misc/player_gui.png?raw=true" width=640 />
 
 ### Browse the albums in the grid view
+Three sizes of the grid views are available. 
+The player spends a number of seconds when it launchs the grid view or list view. 
 <img src="https://github.com/hhhuang/OwnTonePlayer/blob/master/misc/player_gui_grid_view.png?raw=true" width=640 />
 
 ### Config the OwnTone server and select output devices
 <img src="https://github.com/hhhuang/OwnTonePlayer/blob/master/misc/setting.png?raw=true" width=640 />
+
+## Issues to Note
+### Added Dates
+The only time information returned by the OwnTone server is `time_added`, which is the time the file being imported into the database. 
+`time_added` is less useful if you rebuild your database several times. 
+The other time information stored in the OwnTone database, `time_modified`, is more useful since it is the last time the file being modifieid. 
+The current OwnTone API does not return `time_modified` so you can hack the OwnTone database in the following way.
+
+1. Open the database
+
+    ```
+    sqlite3 songs3.db
+    ```
+
+2. Replace the `time_added` with `time_modified` for each file
+
+    ```sql
+    UPDATE files SET time_added = time_modified;
+    ```
+
+
+
 
 
