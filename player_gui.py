@@ -287,7 +287,7 @@ class TableItem(QTableWidgetItem):
 class App(QWidget): 
     def __init__(self):
         super().__init__()
-        self.title = 'OwnTone Player with Expert Knowledge-based Music Recommendation'
+        self.title = 'OwnTone Player for Audiophiles'
         self.left = 256
         self.top = 128
         self.width = 1024
@@ -422,7 +422,7 @@ class App(QWidget):
         self.tabs.addTab(self.stacked_tab, "Albums")
         self.tabs.addTab(self.playlist, "Playlist")
         self.tabs.addTab(self.current_track_info, "Playing")        
-        self.tabs.addTab(self.recommendation, "Recommendation")
+        #self.tabs.addTab(self.recommendation, "Recommendation")
         
         self.layout.addWidget(self.tabs) 
         self.layout.addWidget(self.statusBar)
@@ -671,13 +671,13 @@ class App(QWidget):
     def fillAlbumTable(self, albums):
         self.albumTable.clearContents()
         self.albumTable.setRowCount(len(albums))
-        
+        self.albumTable.setVerticalHeaderLabels(["⏵"]*len(albums))
         for i in range(len(albums)):
             title = TableItem(albums[i].title)
             title.setData(Qt.UserRole, albums[i].album_id)
             self.albumTable.setItem(i, 0, title)
             self.albumTable.setItem(i, 1, TableItem(albums[i].artist))
-            self.albumTable.setItem(i, 4, TableItem(albums[i].last_modified[:10]))
+            self.albumTable.setItem(i, 2, TableItem(albums[i].last_modified[:10]))
         self.albumTable.move(0,0)
         
         self.sorted_order = Qt.DescendingOrder
@@ -722,14 +722,14 @@ class App(QWidget):
         # Create table
         self.albumTable = QTableWidget()
         self.albumTable.setRowCount(0)
-        self.albumTable.setColumnCount(5)
-        self.albumTable.setHorizontalHeaderLabels(["Title", "Aritst", "Genre", "Rating", "Last Modified"])
+        self.albumTable.setColumnCount(3)
+        self.albumTable.setHorizontalHeaderLabels(["Title", "Aritst", "Last Modified"])
         header = self.albumTable.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.Stretch)
         header.setSectionResizeMode(1, QHeaderView.Stretch)
+#        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+#        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
         header.sectionClicked.connect(self.header_on_click)      
         
         row = self.albumTable.verticalHeader()

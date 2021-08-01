@@ -1,5 +1,3 @@
-#import mpd as musicpd
-#import musicpd
 import json
 import jsonpickle
 import os.path
@@ -8,9 +6,7 @@ import requests
 import shutil
 
 from libs.collation import latin2ascii
-#from os import environ
-
-from kb import database as knowledge_base
+#from kb import database as knowledge_base
 
 #album_kb = knowledge_base.load_albums()
 
