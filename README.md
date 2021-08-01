@@ -38,7 +38,9 @@ Configure the OwnTone server in the file ```config.json``` as follows.
 
 ```{"host": "192.168.0.1", "port": 3689, "volume": 100}```
 
-## Use the player
+## Usage
+
+### Start the player
 
 ```python player_gui.py```
   
