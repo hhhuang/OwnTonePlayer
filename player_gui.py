@@ -37,7 +37,10 @@ def get_artwork(album, update=False):
             
     if owntone_client.download_artwork(album.artwork_url, artwork_path):
         return artwork_path
-
+    if owntone_client.download_artwork(album.tracks[0]['artwork_url'], artwork_path):
+        print("Get artwork from the first track")
+        return artwork_path
+    
     if not os.path.isdir(os.path.dirname(artwork_path)):
         os.mkdir(os.path.dirname(artwork_path))
     pathlib.Path(artwork_path).touch()
@@ -530,9 +533,9 @@ class App(QWidget):
     def update_local_info(self):
         if self.playing:
             self.playing_time += 1
-        self.time_info.setText("%d/%d" % (self.playing_time, self.track_time))
-        if not self.slider_moving:
-            self.seek_slider.setValue(self.playing_time)
+            self.time_info.setText("%d/%d" % (self.playing_time, self.track_time))
+            if not self.slider_moving:
+                self.seek_slider.setValue(self.playing_time)
                 
     @pyqtSlot()
     def update_status(self):
@@ -895,7 +898,10 @@ class App(QWidget):
     def grid_item_on_click(self):
         row = self.albumGrid.currentRow()
         col = self.albumGrid.currentColumn()
-        album_id = self.albumGrid.item(row, col).data(Qt.UserRole)
+        item = self.albumGrid.item(row, col)
+        if not item:
+            return 
+        album_id = item.data(Qt.UserRole)
         if album_id == "Spacer":
             return
         self.popup_album(album_id)
@@ -904,7 +910,10 @@ class App(QWidget):
     def grid_item_on_double_click(self):
         row = self.albumGrid.currentRow()
         col = self.albumGrid.currentColumn()
-        album_id = self.albumGrid.item(row, col).data(Qt.UserRole)
+        item = self.albumGrid.item(row, col)
+        if not item:
+            return 
+        album_id = item.data(Qt.UserRole)
         if album_id == "Spacer":
             return
         print("Play on click!")

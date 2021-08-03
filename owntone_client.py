@@ -52,7 +52,11 @@ class OwnToneAPI(object):
             return False
             
     def download_artwork(self, artwork_url, target_filename):
-        url = "http://" + self.host + ":" + str(self.port) + "/" + artwork_url[2:]
+        if artwork_url[0] == '.':
+            artwork_url = artwork_url[1:]
+        if artwork_url[0] == '/':
+            artwork_url = artwork_url[1:]
+        url = "http://" + self.host + ":" + str(self.port) + "/" + artwork_url
         print(url)
         r = requests.get(url, stream=True)
         print(r.status_code)
