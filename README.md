@@ -83,7 +83,4 @@ The current OwnTone API does not return `time_modified` so you can hack the OwnT
     UPDATE files SET time_added = time_modified;
     ```
 
-
-
-
-
+For the files originally maintained by an official iTunes server, the [script](https://github.com/hhhuang/OwnTonePlayer/blob/master/update_creation_time.py) extracts the their creation date from the iTunes metadata, and updates the time_added fields in the OwnTone database.
