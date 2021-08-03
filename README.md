@@ -50,19 +50,19 @@ Configure the OwnTone server in the file ```config.json``` as follows.
 In the first time, the player takes some time depending on the size of your music collection. 
 For a collection of 3,000 CDs on a remote SSD, the procedure will perform in 10 minutes. 
 
-<img src="https://github.com/hhhuang/OwnTonePlayer/blob/master/misc/loading.png?raw=true" width=640 />
+<img src="misc/loading.png?raw=true" width=640 />
 
 ### Play an album
-<img src="https://github.com/hhhuang/OwnTonePlayer/blob/master/misc/player_gui.png?raw=true" width=640 />
+<img src="misc/player_gui.png?raw=true" width=640 />
 
 ### Browse the albums in the grid view
 Four sizes of the grid views are available. 
 The player spends a number of seconds when it launchs the grid view or list view. 
 
-<img src="https://github.com/hhhuang/OwnTonePlayer/blob/master/misc/player_gui_grid_view.png?raw=true" width=640 />
+<img src="misc/player_gui_grid_view.png?raw=true" width=640 />
 
 ### Config the OwnTone server and select output devices
-<img src="https://github.com/hhhuang/OwnTonePlayer/blob/master/misc/setting.png?raw=true" width=640 />
+<img src="misc/setting.png?raw=true" width=640 />
 
 ## Issues to Note
 ### Added Dates
@@ -83,4 +83,4 @@ The current OwnTone API does not return `time_modified` so you can hack the OwnT
     UPDATE files SET time_added = time_modified;
     ```
 
-For the files originally maintained by an official iTunes server, the [script](https://github.com/hhhuang/OwnTonePlayer/blob/master/update_creation_time.py) extracts the their creation date from the iTunes metadata, and updates the time_added fields in the OwnTone database.
+For the files originally maintained by an official iTunes server, the [script](update_creation_time.py) extracts the their creation date from the iTunes metadata, and updates the time_added fields in the OwnTone database.
