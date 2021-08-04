@@ -19,7 +19,7 @@ from kb.kb_prediction import get_recommendation_list
 
 owntone_client = None
 
-def get_artwork(album, update=False):
+def get_artwork(album, recheck_blank=False):
     if not album.artwork_url:
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'artworks', "blank.jpg")
     #   Using the last two folders as the key because it is migratable.
@@ -32,7 +32,7 @@ def get_artwork(album, update=False):
     if os.path.isfile(artwork_path):
         if pathlib.Path(artwork_path).stat().st_size > 0:
             return artwork_path
-        elif not update:
+        elif not recheck_blank:
             return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'artworks', "blank.jpg")
             
     if owntone_client.download_artwork(album.artwork_url, artwork_path):
@@ -659,13 +659,16 @@ class App(QWidget):
         
         def call_rebuild():
             i = 0
+            num_blanks = 0
             albums = self.music_lib.list_latest_albums(10000000)
             for album in albums:
-                get_artwork(album, update=True)
+                f = get_artwork(album, recheck_blank=True)
+                if f.endswith("blank.jpg"):
+                    num_blanks += 1
                 i += 1
                 if i % 100 == 0:
                     print("%d / %d have been processed." % (i, len(albums)))
-                    
+            print("%d / %d albums do not have an artwork." % (num_blanks, len(albums)))
         self.stacked_tab.setCurrentIndex(0)
         run_async(post_process, call_rebuild)
         
