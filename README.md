@@ -84,3 +84,9 @@ The current OwnTone API does not return `time_modified` so you can hack the OwnT
     ```
 
 For the files originally maintained by an official iTunes server, the [script](update_creation_time.py) extracts the their creation date from the iTunes metadata, and updates the time_added fields in the OwnTone database.
+
+### Artwork
+
+The OwnTone server provides the embedded artwork of albums. 
+For an album that does not contain the embedded artwork, the great tool [get_cover_art](https://github.com/regosen/get_cover_art/tree/master/get_cover_art) can be used for automatically searching the artwork from iTunes and embedding the artwork into the file. 
+The tool can perform on the folder of the entire music collection for embedding all the files. 
