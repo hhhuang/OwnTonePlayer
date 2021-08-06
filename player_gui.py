@@ -1,20 +1,24 @@
 # -*- coding: utf-8 -*-
 
+import asyncio
 import datetime
+import time
 from hashlib import sha1
 import json
 import os
 import sys
 
 import pathlib
+import websockets
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QIcon, QImage, QPixmap
 from PyQt5.QtCore import *
+
+from asyncqt import QEventLoop, asyncSlot
  
 from owntone_client import * 
 
-from libs.background_task import run_async, run_async_mutex, run_loop, remove_threads
 from kb.kb_prediction import get_recommendation_list
 
 owntone_client = None
@@ -81,8 +85,10 @@ def createTrackTable():
 
     
 def updateTrackTable(table, tracks, key_field):
+    print(len(tracks))
     table.setRowCount(len(tracks))
     for i in range(len(tracks)):
+        print(i)
         track = tracks[i]
         title = TableItem(track['title'])
         title.setData(Qt.UserRole, track[key_field])
@@ -288,7 +294,7 @@ class TableItem(QTableWidgetItem):
         
         
 class App(QWidget): 
-    def __init__(self):
+    def __init__(self, loop):
         self.albums = []
         super().__init__()
         self.title = 'OwnTone Player for Audiophiles'
@@ -297,12 +303,14 @@ class App(QWidget):
         self.width = 1024
         self.height = 768
         self.log_file = "log.txt"
+        self.loop = loop or asyncio.get_event_loop()
         
         self.initUI()
         self.load_config()
         try:
             self.initClient()
-            run_async(self.initData, self.initPlayer)
+            self.initPlayer()
+            self.initData()
         except:
             self.loading_widget.setText("Fail to load the music library.\nCheck the setting of your OwnTone server in the Options menu and restart this player.")
             #self.popup_configuration()
@@ -327,7 +335,10 @@ class App(QWidget):
         self.client = owntone_client
     
     def initPlayer(self):
-        self.server_mutex = QMutex()
+        self.server_mutex = asyncio.Lock()
+        server = ServerInfo(self.client)
+        self.server_info = server.status()
+        self.setWindowTitle(self.title + ": %s %s" % (self.server_info['library_name'], self.server_info['version']))
         self.music_lib = Library(self.client, update=False)
         self.playqueue = PlayQueue(self.client)
         self.player = Player(self.client)
@@ -344,14 +355,31 @@ class App(QWidget):
         self.update_status()
         self.update_local_info()        
         
+        self.loop.create_task(self.server_notification())
+        
         self.local_updator = QTimer(self)
         self.local_updator.timeout.connect(self.update_local_info)
         self.local_updator.start(1000)
         
-        self.server_updator = QTimer(self)
-        self.server_updator.timeout.connect(self.update_status)
-        self.server_updator.start(10000)
-        
+        #self.server_updator = QTimer(self)
+        #self.server_updator.timeout.connect(self.update_status)
+        #self.server_updator.start(10000)
+    
+    async def server_notification(self):
+        url = "ws://%s:%s" % (self.config['host'], str(self.server_info['websocket_port']))
+        async with websockets.connect(url, subprotocols=["notify"]) as ws:
+            r = { "notify": [ "player", "volume" ] }
+            await ws.send(json.dumps(r))
+            while True:
+                try:
+                    data = await ws.recv()
+                    print(data)
+                    self.update_status()
+                    time.sleep(3)
+                except:
+                    print("websocket error")
+                    break
+            
     def setPlaying(self, playing):
         self.playing = playing
         if playing:
@@ -527,7 +555,7 @@ class App(QWidget):
     def playlist_on_click(self):
         items = [item['uri'] for item in self.playqueue.list()]
         self.playqueue.set_tracks(items, position=self.playlist.currentRow(), playback=True)
-        self.update_status()
+        #self.update_status()
 
     @pyqtSlot()       
     def update_local_info(self):
@@ -537,7 +565,7 @@ class App(QWidget):
             if not self.slider_moving:
                 self.seek_slider.setValue(self.playing_time)
                 
-    @pyqtSlot()
+    #@pyqtSlot()
     def update_status(self):
         track = self.playqueue.get_current_song()
         """{'id': 3358, 'position': 42, 'track_id': 11633, 'title': "Così fan tutte, K. 588: Act 2: 'Abbi Di Me Pietà, Dammi Consiglio' - Aria Guglielmo 'Donne Mie'", 'artist': 'Concerto Köln/Werner Güra/René Jacobs/Marcel Boone/Wolfgang Amadeus Mozart/Concerto Köln', 'artist_sort': 'Concerto Köln/Werner Güra/René Jacobs/Marcel Boone/Wolfgang Amadeus Mozart/Concerto Köln', 'album': 'Mozart: Così fan tutte', 'album_sort': 'Mozart: Così fan tutte', 'album_id': '5036546791084034588', 'album_artist': 'Concerto Köln, René Jacobs and Kölner Kammerchor, Kölner Kammerchor, Concerto Köln, René Jacobs', 'album_artist_sort': 'Concerto Köln, René Jacobs and Kölner Kammerchor, Kölner Kammerchor, Concerto Köln, René Jacobs', 'album_artist_id': '4809176959249518758', 'composer': 'Wolfgang Amadeus Mozart', 'genre': 'Classical', 'year': 0, 'track_number': 43, 'disc_number': 0, 'length_ms': 213066, 'media_kind': 'music', 'data_kind': 'file', 'path': "/disk2/share/Music/Music/Concerto Köln, René Jacobs and Kölner Ka/Mozart_ Così fan tutte/43 Così fan tutte, K. 588_ Act 2_ 'A.m4a", 'uri': 'library:track:11633', 'artwork_url': './artwork/item/11633', 'type': 'm4a', 'bitrate': 643, 'samplerate': 44100, 'channels': 2}"""
@@ -597,7 +625,7 @@ class App(QWidget):
     def volume_released(self):
         self.player.setvol(self.volume_slider.value())
         self.volume_moving = False
-        self.update_status()
+        #self.update_status()
             
     @pyqtSlot()
     def play_on_click(self):
@@ -641,23 +669,18 @@ class App(QWidget):
         exPopup.setMinimumSize(100, 200)
         exPopup.show()
 
-    @pyqtSlot()
-    def rebuild_library(self):
-        def post_process():
-            self.updateAlbumTable(self.music_lib.list_latest_albums(10000000))  
-            
-        def call_rebuild():
+    @asyncSlot()
+    async def rebuild_library(self):
+        async def do_async():
             self.music_lib = Library(self.client, update=True)
-            
-        self.stacked_tab.setCurrentIndex(0)
-        run_async_mutex(self.server_mutex, post_process, call_rebuild)
-
-    @pyqtSlot()
-    def build_all_artworks(self):
-        def post_process():
-            self.updateAlbumTable(self.music_lib.list_latest_albums(10000000))  
+            self.updateAlbumTable(self.music_lib.list_latest_albums(10000000))
         
-        def call_rebuild():
+        self.stacked_tab.setCurrentIndex(0)
+        self.loop.create_task(do_async())
+        
+    @asyncSlot()
+    async def build_all_artworks(self):
+        async def do_async():
             i = 0
             num_blanks = 0
             albums = self.music_lib.list_latest_albums(10000000)
@@ -668,10 +691,12 @@ class App(QWidget):
                 i += 1
                 if i % 100 == 0:
                     print("%d / %d have been processed." % (i, len(albums)))
-            print("%d / %d albums do not have an artwork." % (num_blanks, len(albums)))
+            print("%d / %d albums do not have an artwork." % (num_blanks, len(albums)))        
+            self.updateAlbumTable(self.music_lib.list_latest_albums(10000000))  
+            
         self.stacked_tab.setCurrentIndex(0)
-        run_async(post_process, call_rebuild)
-        
+        self.loop.create_task(do_async())
+
     @pyqtSlot()
     def change_album_view(self):
         self.updateAlbumTable()
@@ -730,8 +755,8 @@ class App(QWidget):
     def updatePlaylist(self):
         print("Updating playlist")
         updateTrackTable(self.playlist, self.playqueue.list(), 'uri')
-        print("Updating Status")
-        self.update_status()
+        #print("Updating Status")
+        #self.update_status()
 #        self.albumTable.doubleClicked.connect(self.item_on_double_click)
 #        self.playlist.clicked.connect(self.item_on_click)           
         
@@ -983,11 +1008,14 @@ class App(QWidget):
                     
     def closeEvent(self, event):
         print("Closing window")
-        remove_threads()
-        
+                
         
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ex = App()
-    sys.exit(app.exec_())
+    loop = QEventLoop(app)
+    asyncio.set_event_loop(loop)
     
+    ex = App(loop)
+    ex.show()
+    with loop:
+        loop.run_forever()

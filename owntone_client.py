@@ -26,8 +26,7 @@ class OwnToneAPI(object):
     def call(self, method, target, action='', data = None, **parameters):
         if data is None:
             data = {}
-        else:
-            data = json.dumps(data)
+        data = json.dumps(data)
             
         url = self.make_url(target, action)
         if method == 'get':
@@ -72,8 +71,7 @@ class OwnToneAPI(object):
         
 def connect_server(host='localhost', port=3689):
     conn = OwnToneAPI(host, port)
-    print(conn)
-    return conn    
+    return conn
 
 class Album(object):
     def __init__(self, raw_album):
@@ -350,6 +348,15 @@ class Outputs(object):
     def set_outputs(self, output_ids):
         return self.client.call('put', 'outputs', "set", data={"outputs": output_ids})
     
+    
+class ServerInfo(object):
+    def __init__(self, client):
+        self.client = client
+        
+    def status(self):
+        return self.client.call('get', 'config')
+
+
 def show_list(albums):
     print("Number of albums: %d" % len(albums))
     for album in albums:

@@ -40,7 +40,11 @@ class BackgroundTask(QRunnable):
             else:
                 print("Run async call without lock")
                 results = self.func(*self.args, **self.kwargs)
-            self.signals.result.emit(results)
+            try:
+                self.signals.result.emit(results)
+            except:
+                print("main is missing")
+                break
             self.signals.finished.emit()
             self.loop -= 1
             
@@ -94,4 +98,4 @@ def run_loop_mutex(loop, lock, callback, func, *args, **kwargs):
 def remove_threads():
     global all_stop
     all_stop = True
-    #QThreadPool.globalInstance().clear()
+    QThreadPool.globalInstance().clear()
