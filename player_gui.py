@@ -352,18 +352,12 @@ class App(QWidget):
         self.updatePlaylist()
         self.updateRecommendation(collection)
         
-        self.update_status()
-        self.update_local_info()        
-        
+        self.update_status()        
         self.loop.create_task(self.server_notification())
         
         self.local_updator = QTimer(self)
         self.local_updator.timeout.connect(self.update_local_info)
         self.local_updator.start(1000)
-        
-        #self.server_updator = QTimer(self)
-        #self.server_updator.timeout.connect(self.update_status)
-        #self.server_updator.start(10000)
     
     async def server_notification(self):
         url = "ws://%s:%s" % (self.config['host'], str(self.server_info['websocket_port']))
@@ -451,14 +445,16 @@ class App(QWidget):
         
     def event(self, event):
         if event.type() in [QEvent.NonClientAreaMouseButtonRelease, QEvent.WindowStateChange]:
-            print("Event deteted.")
-            if not self.list_view_action.isChecked():
-                ideal_num_columns, _, _ = self.computeGridSize()
-                current_num_columns = self.albumGrid.columnCount() - 1  #   There is addionional column as the left maring.
-                if ideal_num_columns != current_num_columns:
-                    self.updateAlbumTable(None)
+            self.resizeWindow()
         return super().event(event)
         
+    def resizeWindow(self):
+        if not self.list_view_action.isChecked():
+            ideal_num_columns, _, _ = self.computeGridSize()
+            current_num_columns = self.albumGrid.columnCount() - 1  #   There is addionional column as the left maring.
+            if ideal_num_columns != current_num_columns:
+                self.updateAlbumTable(None)
+                    
     def renderLayout(self):
         self.layout = QVBoxLayout()
         self.layout.setMenuBar(self.menuBar)
