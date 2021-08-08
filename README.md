@@ -1,6 +1,6 @@
 # OwnTone Player for Audiophiles
 
-This is an audiophile music player for the [OwnTone](https://github.com/owntone/owntone-server) music server (previously forked-daapd), migrated from my previous [project](https://github.com/hhhuang/mpd_player) for the [MPD](https://www.musicpd.org) protocol. 
+This is an audiophile-oriented remote controller for the [OwnTone](https://github.com/owntone/owntone-server) music server (previously forked-daapd), migrated from my previous [project](https://github.com/hhhuang/mpd_player) for the [MPD](https://www.musicpd.org) protocol. 
 This player is designed for the purpose of audio playback, aiming to deal with two core issues in network audio playback.
 
 Firstly, the traditional clients are lightweight, leeaving heavy load for the music servers to support functions such as browsing, search, and streaming artworks.
@@ -15,6 +15,9 @@ Secondly, many players are not designed for true music lovers who have a large c
 It is not uncommon that the user-inferace got annoyingly slow when more than 1,000 albums were imported.
 We design this player with this consideration in mind, providing an elegant and friendly user-interface for efficiently handling a large collection of albums. 
 
+The cost of this player (actually a remote controller) is its resource hungry nature. 
+For a collection of about 3,000 disks and 40,000 tracks, the process of this player can consume more than 2G of memory in a Windows 10 environment. 
+
 ## Key Features
 * Friendly with a large number of albums. The player has been tested with a collection more than 3,000 CDs.
 * This player is album-oriented. All the tracks in the OwnTone server are reorganized into albums. Compared with individual tracks, album is a much more structural and meaningful unit for serious music lovers' critical listening. 
@@ -24,7 +27,7 @@ We design this player with this consideration in mind, providing an elegant and 
 * Python 3
 * QT 5
 * Operating system: Windows/Mac/Linux and so on. The code has been verified on Windows 10 and Mac OS Mojave.
-* A collection of audio files that is manipulated by an OwnTone server. [More information of the setup of the OwnTone server](https://github.com/owntone/owntone-server).
+* A collection of audio files that is manipulated by an OwnTone server. [More information of the setup of the OwnTone server](https://github.com/owntone/owntone-server). The OwnTone server has to enable websocket for receiving push notifications. 
 * An ideal setting is comprised of a standalone music server running the OwnTone service, a standalone music renderer like a Hi-Fi DAC/Stream Player that supports Apple AirPlay or [Shairport Sync](https://github.com/mikebrady/shairport-sync), and this player installed on another powerful desktop/laptop in the same LAN. 
 
 ## Setup
@@ -35,7 +38,7 @@ We design this player with this consideration in mind, providing an elegant and 
 
 ### Assign the MPD music server and restart the player
 
-Configure the OwnTone server in the file ```config.json``` as follows.
+Configure the OwnTone server in the file ```config.json``` as follows for your OwnTone server at ```192.168.0.1'''.
 
 ```{"host": "192.168.0.1", "port": 3689, "volume": 100}```
 
