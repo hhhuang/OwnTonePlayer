@@ -38,7 +38,8 @@ For a collection of about 3,000 disks and 40,000 tracks, the process of this pla
 
 ### Assign the MPD music server and restart the player
 
-Configure the OwnTone server in the file ```config.json``` as follows for your OwnTone server at ```192.168.0.1'''.
+Configure the OwnTone server in the file ```config.json``` as follows for your OwnTone server at ```192.168.0.1``` with the default port ```3689```.
+Note that your OwnTone has to be configured enabling ```websocket``` (with a default port ```3688``` usually) for this player to receive push notifications from the server. 
 
 ```{"host": "192.168.0.1", "port": 3689, "volume": 100}```
 
