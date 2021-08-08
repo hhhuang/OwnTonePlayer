@@ -66,6 +66,7 @@ class OwnToneAPI(object):
                 r.raw.decode_content = True
                 shutil.copyfileobj(r.raw, f)   
                 return True
+        print(target_filename)
         print("The image is not found")
         return False
         
@@ -91,7 +92,11 @@ class Album(object):
             pass
             
     def get_metadata(self):
-        return []       
+        self.hirez = False
+        for t in self.tracks:
+            if t['bitrate'] >= 1000 or t['samplerate'] > 44100:
+                self.hirez = True
+                break
         
     def match(self, keywords):
         for keyword in keywords:

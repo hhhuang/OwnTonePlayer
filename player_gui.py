@@ -15,7 +15,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QIcon, QImage, QPixmap
 from PyQt5.QtCore import *
 
-from asyncqt import QEventLoop, asyncSlot
+from qasync import QEventLoop, asyncSlot
  
 from owntone_client import * 
 
@@ -310,7 +310,7 @@ class App(QWidget):
         try:
             self.initClient()
             self.initPlayer()
-            self.initData()
+            self.loop.create_task(self.initData())
         except:
             self.loading_widget.setText("Fail to load the music library.\nCheck the setting of your OwnTone server in the Options menu and restart this player.")
             #self.popup_configuration()
@@ -339,14 +339,14 @@ class App(QWidget):
         server = ServerInfo(self.client)
         self.server_info = server.status()
         self.setWindowTitle(self.title + ": %s %s" % (self.server_info['library_name'], self.server_info['version']))
-        self.music_lib = Library(self.client, update=False)
         self.playqueue = PlayQueue(self.client)
         self.player = Player(self.client)
         self.player.setvol(self.config['volume'])
         self.outputs = Outputs(self.client)
         self.slider_moving = False
         
-    def initData(self, results=None):
+    async def initData(self):
+        self.music_lib = Library(self.client, update=False)
         collection = self.music_lib.list_latest_albums()
         self.updateAlbumTable(collection)
         self.updatePlaylist()
@@ -572,6 +572,12 @@ class App(QWidget):
         output_str = ",".join([o['name'] for o in self.outputs.status() if o['selected']])
         
         if track and status and 'album' in track and 'item_length_ms' in status:
+            album = self.music_lib.get_album_by_tmp_id(track['album_id'])
+            if album.hirez:
+                bg_color = "background-color: #fff6b9; color: black; "
+            else:
+                bg_color = "background-color: white; color: black;"
+            self.infobox.setStyleSheet("QLineEdit { %s }" % bg_color)
             self.infobox.setText("%s: %d-%d %s %s" % (track['album'], int(track['disc_number']), int(track['track_number']), track['title'], track['artist']))
             self.playing_time = status['item_progress_ms'] // 1000
             self.track_time = status['item_length_ms'] // 1000
@@ -592,10 +598,9 @@ class App(QWidget):
             if output_str:
                 output_str = " (%s)" % output_str
             self.volume_slider.setToolTip("Volume: %d%s" % (status['volume'], output_str))
-            
-            album = self.music_lib.get_album_by_tmp_id(track['album_id'])
             self.updateCurrentTrackInfo(album, track)
         else:
+            self.infobox.setStyleSheet("QLineEdit { background-color: transparent; color: black}")
             self.infobox.setText("")
             self.time_info.setText("")
             self.setPlaying(False)
