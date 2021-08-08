@@ -1,6 +1,6 @@
 # OwnTone Player for Audiophiles
 
-This is an audiophile-oriented remote controller for the [OwnTone](https://github.com/owntone/owntone-server) music server (previously forked-daapd), migrated from my previous [project](https://github.com/hhhuang/mpd_player) for the [MPD](https://www.musicpd.org) protocol. 
+This is an audiophile-oriented remote controller for the [OwnTone](https://github.com/owntone/owntone-server) music server (previously forked-daapd), migrated from a previous project for the [MPD](https://www.musicpd.org) protocol. 
 This player is designed for the purpose of audio playback, aiming to deal with two core issues in network audio playback.
 
 Firstly, the traditional clients are lightweight, leeaving heavy load for the music servers to support functions such as browsing, search, and streaming artworks.
