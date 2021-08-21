@@ -19,7 +19,7 @@ from qasync import QEventLoop, asyncSlot
  
 from owntone_client import * 
 
-from kb.kb_prediction import get_recommendation_list
+#from kb.kb_prediction import get_recommendation_list
 
 owntone_client = None
 
@@ -90,7 +90,11 @@ def updateTrackTable(table, tracks, key_field):
     for i in range(len(tracks)):
         print(i)
         track = tracks[i]
-        title = TableItem(track['title'])
+        if track['composer']:
+            title_text = track['composer'] + ': ' + track['title']
+        else:
+            title_text = track['title']
+        title = TableItem(title_text)
         title.setData(Qt.UserRole, track[key_field])
         table.setItem(i, 0, TableItem(str(track['disc_number'])))
         table.setItem(i, 1, TableItem(str(track['track_number'])))
@@ -346,33 +350,19 @@ class App(QWidget):
         self.slider_moving = False
         
     async def initData(self):
+        self.last_notified = None
         self.music_lib = Library(self.client, update=False)
         collection = self.music_lib.list_latest_albums()
+
         self.updateAlbumTable(collection)
         self.updatePlaylist()
         self.updateRecommendation(collection)
-        
-        self.update_status()        
-        self.loop.create_task(self.server_notification())
+
+        self.update_status()     
         
         self.local_updator = QTimer(self)
         self.local_updator.timeout.connect(self.update_local_info)
         self.local_updator.start(1000)
-    
-    async def server_notification(self):
-        url = "ws://%s:%s" % (self.config['host'], str(self.server_info['websocket_port']))
-        async with websockets.connect(url, subprotocols=["notify"]) as ws:
-            r = { "notify": [ "player", "volume" ] }
-            await ws.send(json.dumps(r))
-            while True:
-                try:
-                    data = await ws.recv()
-                    print(data)
-                    self.update_status()
-                    time.sleep(3)
-                except:
-                    print("websocket error")
-                    break
             
     def setPlaying(self, playing):
         self.playing = playing
@@ -552,7 +542,7 @@ class App(QWidget):
         items = [item['uri'] for item in self.playqueue.list()]
         self.playqueue.set_tracks(items, position=self.playlist.currentRow(), playback=True)
         #self.update_status()
-
+    
     @pyqtSlot()       
     def update_local_info(self):
         if self.playing:
@@ -752,10 +742,41 @@ class App(QWidget):
         self.sorted_order = Qt.DescendingOrder
         self.sorted_column = 2
         self.albumTable.sortItems(self.sorted_column, self.sorted_order)
+    
+    async def server_notification(self):
+        url = "ws://%s:%s" % (self.config['host'], str(self.server_info['websocket_port']))
+        async with websockets.connect(url, subprotocols=["notify"]) as ws:
+            r = { "notify": [ "player", "volume" ] }
+            await ws.send(json.dumps(r))
+            while True:
+                try:
+                    data = await ws.recv()
+                    print(data)
+                    self.last_notified = datetime.datetime.now()
+                    self.update_status()
+                    time.sleep(3)
+                except:
+                    print("websocket error")
+                    break
         
+    @pyqtSlot()
+    def reset_server_notification(self):
+        #   Re-register the push notification if no response for a while
+        if not self.last_notified or (datetime.datetime.now() - self.last_notified).seconds >= 10:
+            print("No notification is found. Reset.")
+            self.last_notified = datetime.datetime.now()
+            self.loop.create_task(self.server_notification())
+                
     def updatePlaylist(self):
         print("Updating playlist")
-        updateTrackTable(self.playlist, self.playqueue.list(), 'uri')
+        updateTrackTable(self.playlist, self.playqueue.list(), 'uri')   
+
+        #   Monitoring if the push notification normally works in 10 seconds later.
+        self.notification_checker = QTimer(self)
+        self.notification_checker.setSingleShot(True)
+        self.notification_checker.timeout.connect(self.reset_server_notification)
+        self.notification_checker.start(5000)
+        
         #print("Updating Status")
         #self.update_status()
 #        self.albumTable.doubleClicked.connect(self.item_on_double_click)
@@ -763,7 +784,7 @@ class App(QWidget):
         
     def updateRecommendation(self, collection):
         table = self.recommendation
-        items = get_recommendation_list(collection, 0)["album"]
+        items = [] #get_recommendation_list(collection, 0)["album"]
      
         table.setRowCount((len(items) + 2) // 3)
         for idx, data in enumerate(items):
