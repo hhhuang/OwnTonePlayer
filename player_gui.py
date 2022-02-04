@@ -23,7 +23,7 @@ from owntone_client import *
 
 owntone_client = None
 
-def get_artwork(album, recheck_blank=False):
+def get_artwork(album, recheck_blank=False, update=False):
     if not album.artwork_url:
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'artworks', "blank.jpg")
     #   Using the last two folders as the key because it is migratable.
@@ -33,7 +33,7 @@ def get_artwork(album, recheck_blank=False):
     artwork_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'artworks', d1, d2 + ".jpg")
     #   Extract the embedded artwork from the file on the fly.
     
-    if os.path.isfile(artwork_path):
+    if update == False and os.path.isfile(artwork_path):
         if pathlib.Path(artwork_path).stat().st_size > 0:
             return artwork_path
         elif not recheck_blank:
@@ -90,7 +90,7 @@ def updateTrackTable(table, tracks, key_field):
     for i in range(len(tracks)):
         print(i)
         track = tracks[i]
-        if track['composer']:
+        if track.get('composer', ""):
             title_text = track['composer'] + ': ' + track['title']
         else:
             title_text = track['title']
@@ -124,7 +124,7 @@ class AlbumPopup(QDialog):
         self.show()
         
     def createAlbumSection(self):
-        artwork_file = get_artwork(self.album)
+        artwork_file = get_artwork(self.album, update=False)
         img = QPixmap(artwork_file)
         artwork = QLabel(self)
         artwork.setPixmap(img.scaled(300, 300, Qt.KeepAspectRatio))
@@ -984,7 +984,8 @@ class App(QWidget):
     def popup_album(self, album_id):
         album = self.music_lib.get_album(album_id)
         exPopup = AlbumPopup(self, album)
-        exPopup.setGeometry(100, 100, 1024, 768)
+        left, top = self.geometry().left(), self.geometry().top()
+        exPopup.setGeometry(left+100, top+100, 1024, 768)
         exPopup.show()  
     
     @pyqtSlot()
