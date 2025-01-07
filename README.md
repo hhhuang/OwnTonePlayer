@@ -3,20 +3,21 @@
 This is an audiophile-oriented remote controller for the [OwnTone](https://github.com/owntone/owntone-server) music server (previously forked-daapd), migrated from a previous project for the [MPD](https://www.musicpd.org) protocol. 
 This player is designed for the purpose of audio playback, aiming to deal with two core issues in network audio playback.
 
-Firstly, the traditional clients are lightweight, leeaving heavy load for the music servers to support functions such as browsing, search, and streaming artworks.
+Firstly, the traditional clients are lightweight, leaving heavy load for the music servers to support functions such as browsing, search, and streaming artworks.
 These jobs can cause a significant latency to the sensitive audio-grade music servers. 
-In order to improve the sound quality, the loads of the music server and the renderer are minimized. 
+In order to improve the sound quality, we implement this player with the aim in mind that the loads of the music server and the renderer are minimized. 
 The philosophy is to handle most of loads in this player, which is nearly isolated from the real-time playback loop.
 In other words, the functions including browsing and search are locally performed by this player. 
-All the metadata of albums, as well as artworks, are locally cached in the client. 
-In this way, the music server can focus on streaming the music data to the renderer with almost zero load for other tasks. 
+All metadata of albums, as well as artworks, are cached in the client locally. 
+In this way, the music server can fully serve streaming the music data to the renderer with almost zero load for other tasks. 
 
 Secondly, many players are not designed for true music lovers who have a large collection of albums. 
 It is not uncommon that the user-inferace got annoyingly slow when more than 1,000 albums were imported.
 We design this player with this consideration in mind, providing an elegant and friendly user-interface for efficiently handling a large collection of albums. 
 
-The cost of this player (actually a remote controller) is its resource hungry nature. 
-For a collection of about 3,000 disks and 40,000 tracks, the process of this player can consume more than 2G of memory in a Windows 10 environment. 
+The cost of this player (actually a remote controller) is its nature of resource hungry. 
+For a collection of about 3,000 disks and 40,000 tracks, the process of this player can consume more than 2G of memory in the Windows 10 environment. 
+Fortunately, such a system requirement is not really an issue for most users. 
 
 ## Key Features
 * Friendly with a large number of albums. The player has been tested with a collection more than 3,000 CDs.
