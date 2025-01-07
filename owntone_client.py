@@ -120,6 +120,8 @@ class Album(object):
             keywords.add(latin2ascii(track['album_artist'].lower()))
             keywords.add(latin2ascii(track.get('composer', '').lower()))
             keywords.add(latin2ascii(track.get('genre', '').lower()))
+        if self.hirez:
+            keywords.add("hirez")
         self.keywords = " ".join(keywords)        
         
     def __cmp__(self, other):
